@@ -1,39 +1,33 @@
 // tcp server
-var net = require('net');
+const { createServer } = require('net');
+let { numPlayers, playGame } = require('./state');
 
-var server = net.createServer();  
-server.on('connection', handleConnection);
+const allSockets = [];
 
-server.listen(9876, function() {  
-  console.log('tcp server listening to %j', server.address());
+const server = createServer(socket => {
+    socket.setEncoding('utf8')
 });
 
-// sockets, continued
-var io = require('./sockets');
+server.on('error', err => console.log(`ERROR: ${err}`));
 
-function handleConnection(conn) {  
-  
-  io.sockets.emit('join');
+server.on('connection', socket => {
+    numPlayers++;
 
-  var remoteAddress = conn.remoteAddress + ':' + conn.remotePort;
-  console.log('new client connection from %s', remoteAddress);
+    if (numPlayers == 1) {
+        allSockets.push(socket);
+        socket.write('You\'re "X"s!\n')
+        socket.write('Waiting for another player to join...\n')
+    }
 
-  conn.on('data', onConnData);
-  conn.on('close', onConnClose);
-  conn.on('error', onConnError);
+    if (numPlayers == 2) {
+        allSockets.push(socket);
+        socket.write('You\'re "O"s!\n')
+        allSockets[0].write('Another player has joined!\n');
+        allSockets.forEach(socket => socket.write('Let\'s get started...\n'))
+    }
 
-  function onConnData(d) {
-    console.log('connection data from %s: %j', remoteAddress, d);
-    io.sockets.emit('said', {message: d.toString().slice(0, d.length-1)});
-  }
+    playGame(allSockets);
+});
 
-  function onConnClose() {
-    console.log('connection from %s closed', remoteAddress);
-    io.sockets.emit('left');
-  }
+server.listen(9876, () => console.log(`tcp server listening to ${server.address().port}`));
 
-  function onConnError(err) {
-    console.log('Connection %s error: %s', remoteAddress, err.message);
-    io.sockets.emit('error');
-  }
-}
