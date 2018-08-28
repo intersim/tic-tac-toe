@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Why hello there...</title>
+</head>
+<body>
+
+<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+<script type="text/javascript">
+  // client-side sockets
+	var socket = io(window.location.origin);
+
+	socket.on('connect', function () {
+
+		console.log('socket connection made!')
+
+    socket.on('join', function () {
+      console.log('join!')
+    });
+
+    socket.on('said', function (data) {
+      console.log('said!', data)
+      document.write('<p style="font-family: sans-serif;">' + data.message + '</p>');
+    });
+
+		socket.on('left', function () {
+      console.log('left!')
+    });
+
+  });
+</script>
+
+</body>
+</html>
