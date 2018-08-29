@@ -1,8 +1,6 @@
-// tcp server
+// How to connect: nc 127.0.0.1 9876
 const { createServer } = require('net');
 const game = require('./game');
-
-const allSockets = [];
 
 const server = createServer(socket => {
     socket.setEncoding('utf8')
@@ -11,20 +9,18 @@ const server = createServer(socket => {
 server.on('error', err => console.log(`ERROR: ${err}`));
 
 server.on('connection', socket => {
-    game.numPlayers++;
+    game.players.push(socket);
 
-    if (game.numPlayers == 1) {
-        allSockets.push(socket);
+    if (game.players.length == 1) {
         socket.write('You\'re "X"s!\n')
         socket.write('Waiting for another player to join...\n')
     }
 
-    if (game.numPlayers == 2) {
-        allSockets.push(socket);
+    if (game.players.length == 2) {
         socket.write('You\'re "O"s!\n')
-        allSockets[0].write('Another player has joined!\n');
-        allSockets.forEach(socket => socket.write('Let\'s get started...\n'))
-        game.playGame(allSockets);
+        game.players[1].write('Another player has joined!\n');
+        game.players.forEach(player => player.write(`Let's get started...\n${game.stringifyBoard()}`))
+        game.playGame();
     }
 
 });
