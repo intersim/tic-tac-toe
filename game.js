@@ -15,7 +15,7 @@ function checkBoard () {
   const board = this.board;
   
   for (let i = 1; i <= 2; i++) {
-    const gameOverString = `Player ${i} wins!`;
+    const gameOverString = `Player ${i} wins!\n`;
 
     //horizonals
     if (board[0] == i && board[1] == i && board[2] == i) return gameOverString;
@@ -38,11 +38,13 @@ function playGame(players) {
       const newBoard = this.stringifyBoard();
       
       this.players.forEach(player => player.write(`Player ${i+1}'s move:\n` + newBoard));
+      const isGameOver = this.checkBoard();
+
+      if (isGameOver) this.players.forEach(player => player.end(isGameOver));
     });
   })
 
-  // add game logic here!
-  // cycle through number of turns; determine which player it is
+  // determine whose turn it is, cycle through number of turns
 }
 
 function playTurn(playerNum, move) {
