@@ -11,9 +11,33 @@ function stringifyBoard () {
   return stringBoard;
 }
 
+function checkBinaryFlags () {
+  for (let playerIdx = 0; playerIdx < 2; playerIdx++) {
+    for (let conditionIdx = 0; conditionIdx < this.winConditions[playerIdx].length; conditionIdx++) {
+      let winCondition = this.winConditions[playerIdx][conditionIdx]
+      
+      if ((this.boardFlags & winCondition) == winCondition) {
+        console.log(this.boardFlags.toString(2))
+        console.log(this.winConditions[playerIdx][conditionIdx].toString(2))
+        console.log((this.boardFlags & winCondition) == winCondition)
+        
+        console.log(this.getGameOverString(playerIdx + 1));
+        return;
+      }
+    }
+  }
+}
+
 function checkBoard () {
   const board = this.board;
   
+  // bitshifting:
+  // take current state of the board, & with num that represents winning condition
+  // if result is the same as the winning condition, then someone wins!
+
+  // e.g. if (this.boardFlags & 86016 == 86016) return getGameOverString(1);
+  checkBinaryFlags.call(this);
+
   for (let i = 1; i <= 2; i++) {
     const gameOverString = `Player ${i} wins!\n`;
 
@@ -29,6 +53,10 @@ function checkBoard () {
     if (board[0] == i && board[4] == i && board[8] == i) return gameOverString;
     if (board[2] == i && board[4] == i && board[6] == i) return gameOverString;
   }
+}
+
+function getGameOverString(playerNum) {
+  return `Player ${playerNum} wins!`;
 }
 
 function playGame(players) {
@@ -68,50 +96,41 @@ const game = {
   numTurns: 0,
   board: [0,0,0,0,0,0,0,0,0],
   boardFlags: 0,
+  winConditions: [
+    [86016, 1344, 21, 66576, 16644, 4161, 65793, 4368], 
+    [258048, 4032, 63, 199728, 49932, 12483, 197379, 13104]
+  ],
   stringifyBoard,
   checkBoard,
   playGame,
-  playTurn
+  playTurn,
+  getGameOverString
 }
 
 module.exports = game
 
-// Beginning state:
-//    00 00 00 00 00 00 00 00 00
-
-
-// 1: 010000000000000000 
-// 2: 000100000000000000
-// 3: 000001000000000000 
-// 4: 000000010000000000 
-// 5: 000000000100000000 
-// 6: 000000000001000000 
-// 7: 000000000000010000 
-// 8: 000000000000000100 
-// 9: 000000000000000001 
-
 // Player 1 wins:
 // Horizontals:
-// 01 01 01 00 00 00 00 00 00
-// 00 00 00 01 01 01 00 00 00
-// 00 00 00 00 00 00 01 01 01
+// 010101000000000000 - 86016
+// 000000010101000000 - 1344
+// 000000000000010101 - 21 
 // Verticals:
-// 01 00 00 01 00 00 01 00 00
-// 00 01 00 00 01 00 00 01 00
-// 00 00 01 00 00 01 00 00 01
+// 010000010000010000 - 66576
+// 000100000100000100 - 16644
+// 000001000001000001 - 4161
 // Diagonals:
-// 01 00 00 00 01 00 00 00 01
-// 00 00 01 00 01 00 01 00 00
+// 010000000100000001 - 65793
+// 000001000100010000 - 4368
 
 // Player 2 wins:
 // Horizontals:
-// 11 11 11 00 00 00 00 00 00
-// 00 00 00 11 11 11 00 00 00
-// 00 00 00 00 00 00 11 11 11
+// 111111000000000000 - 258048
+// 000000111111000000 - 4032
+// 000000000000111111 - 63
 // Verticals:
-// 11 00 00 11 00 00 11 00 00
-// 00 11 00 00 11 00 00 11 00
-// 00 00 11 00 00 11 00 00 11
+// 110000110000110000 - 199728
+// 001100001100001100 - 49932
+// 000011000011000011 - 12483
 // Diagonals:
-// 11 00 00 00 11 00 00 00 11
-// 00 00 11 00 11 00 11 00 00
+// 110000001100000011 - 197379
+// 000011001100110000 - 13104

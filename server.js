@@ -25,5 +25,7 @@ server.on('connection', socket => {
 
 });
 
+// handle when people disconnect too
+
 server.listen(9876, () => console.log(`tcp server listening to ${server.address().port}`));
 
