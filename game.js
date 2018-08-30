@@ -1,57 +1,75 @@
-function stringifyBoard () {
-  const board = this.board;
-  let stringBoard = '';
-  board.forEach((space, i) => {
-    if (space == 0) stringBoard += `| ${i + 1} |`
-    if (space == 1) stringBoard += '| X |'
-    if (space == 2) stringBoard += '| O |'
-    if ((i + 1) % 3 == 0) stringBoard += '\n'
-  });
-
-  return stringBoard;
+// https://github.com/uxitten/polyfill/blob/master/string.polyfill.js
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/padStart
+if (!String.prototype.padStart) {
+  String.prototype.padStart = function padStart(targetLength, padString) {
+    targetLength = targetLength >> 0; //truncate if number or convert non-number to 0;
+    padString = String((typeof padString !== 'undefined' ? padString : ' '));
+    if (this.length > targetLength) {
+      return String(this);
+    }
+    else {
+      targetLength = targetLength - this.length;
+      if (targetLength > padString.length) {
+        padString += padString.repeat(targetLength / padString.length); //append to original to ensure we are longer than needed
+      }
+      return padString.slice(0, targetLength) + String(this);
+    }
+  };
 }
 
-function checkBinaryFlags () {
-  for (let playerIdx = 0; playerIdx < 2; playerIdx++) {
-    for (let conditionIdx = 0; conditionIdx < this.winConditions[playerIdx].length; conditionIdx++) {
-      let winCondition = this.winConditions[playerIdx][conditionIdx]
-      
-      if ((this.boardFlags & winCondition) == winCondition) {
-        console.log(this.boardFlags.toString(2))
-        console.log(this.winConditions[playerIdx][conditionIdx].toString(2))
-        console.log((this.boardFlags & winCondition) == winCondition)
-        
-        console.log(this.getGameOverString(playerIdx + 1));
-        return;
-      }
-    }
+function stringifyBoard () {
+  const { board } = this;
+  let stringBoard = board.toString(2).padStart(18, '0');
+  let stringSquareBoard = '';
+
+  for (let i = 0; i < stringBoard.length; i+=2) {
+    let space = stringBoard[i] + stringBoard[i+1];
+    if (space == '00') stringSquareBoard += `| _ |`
+    if (space == '01') stringSquareBoard += '| X |'
+    if (space == '11') stringSquareBoard += '| O |'
+    if ((i + 2) % 3 == 0) stringSquareBoard += '\n'
   }
+
+  return stringSquareBoard;
 }
 
 function checkBoard () {
-  const board = this.board;
-  
-  // bitshifting:
-  // take current state of the board, & with num that represents winning condition
-  // if result is the same as the winning condition, then someone wins!
+  const horizontals = [
+    this.board >> 12,
+    (this.board << 6) >> 12,
+    (this.board << 6) >> 12
+  ]
 
-  // e.g. if (this.boardFlags & 86016 == 86016) return getGameOverString(1);
-  checkBinaryFlags.call(this);
+  for (let i = 0; i < horizontals.length; i++) {
+    if (!(horizontals[i] ^ parseInt('010101',2))) return "Player one wins!"
+    if (!(horizontals[i] ^ parseInt('111111', 2))) return "Player two wins!";
+  }
 
-  for (let i = 1; i <= 2; i++) {
-    const gameOverString = `Player ${i} wins!\n`;
+  const verticals = [
+    this.board & parseInt('110000110000110000', 2),
+    this.board & parseInt('001100001100001100', 2),
+    this.board & parseInt('000011000011000011', 2)
+  ]
 
-    //horizonals
-    if (board[0] == i && board[1] == i && board[2] == i) return gameOverString;
-    if (board[3] == i && board[4] == i && board[5] == i) return gameOverString;
-    if (board[6] == i && board[7] == i && board[8] == i) return gameOverString;
-    // verticals
-    if (board[0] == i && board[3] == i && board[6] == i) return gameOverString;
-    if (board[1] == i && board[4] == i && board[7] == i) return gameOverString;
-    if (board[2] == i && board[5] == i && board[8] == i) return gameOverString;
-    // diagonals
-    if (board[0] == i && board[4] == i && board[8] == i) return gameOverString;
-    if (board[2] == i && board[4] == i && board[6] == i) return gameOverString;
+  for (let i = 0; i < verticals.length; i++) {
+    if (!(verticals[i] ^ parseInt('010000010000010000', 2))) return "Player one wins!"
+    if (!(verticals[i] ^ parseInt('000100000100000100', 2))) return "Player one wins!"
+    if (!(verticals[i] ^ parseInt('000001000001000001', 2))) return "Player one wins!"
+    if (!(verticals[i] ^ parseInt('110000110000110000', 2))) return "Player two wins!"
+    if (!(verticals[i] ^ parseInt('001100001100001100', 2))) return "Player two wins!"
+    if (!(verticals[i] ^ parseInt('000011000011000011', 2))) return "Player two wins!"
+  }
+
+  const diagonals = [
+    this.board & parseInt('110000001100000011', 2),
+    this.board & parseInt('000011001100110000', 2)
+  ]
+
+  for (let i = 0; i < diagonals.length; i++) {
+    if (!(diagonals[i] ^ parseInt('010000000100000001', 2))) return "Player one wins!"
+    if (!(diagonals[i] ^ parseInt('000001000100010000', 2))) return "Player one wins!"
+    if (!(diagonals[i] ^ parseInt('110000001100000011', 2))) return "Player two wins!"
+    if (!(diagonals[i] ^ parseInt('000011001100110000', 2))) return "Player two wins!"
   }
 }
 
@@ -76,30 +94,19 @@ function playGame(players) {
 }
 
 function playTurn(playerNum, move) {
-  // update board state
-  this.board[move - 1] = playerNum;
-  console.log(this.board)
   // check if spot is open
   // if not, claim it!
 
-  // trying bit shifting stuff
+  // set new board state
   let binaryOffset = playerNum == 2 ? 3 : 1;
   let binaryNum = binaryOffset << ((9 - move) * 2)
-  this.boardFlags = this.boardFlags | binaryNum;
-  // to check if spot is open:
-  // shift other player to same spot
-  // XOR that num with the board? and if it's zero...?
+  this.board = this.board | binaryNum;
 }
 
 const game = {
   players: [],
   numTurns: 0,
-  board: [0,0,0,0,0,0,0,0,0],
-  boardFlags: 0,
-  winConditions: [
-    [86016, 1344, 21, 66576, 16644, 4161, 65793, 4368], 
-    [258048, 4032, 63, 199728, 49932, 12483, 197379, 13104]
-  ],
+  board: 0,
   stringifyBoard,
   checkBoard,
   playGame,
@@ -108,29 +115,3 @@ const game = {
 }
 
 module.exports = game
-
-// Player 1 wins:
-// Horizontals:
-// 010101000000000000 - 86016
-// 000000010101000000 - 1344
-// 000000000000010101 - 21 
-// Verticals:
-// 010000010000010000 - 66576
-// 000100000100000100 - 16644
-// 000001000001000001 - 4161
-// Diagonals:
-// 010000000100000001 - 65793
-// 000001000100010000 - 4368
-
-// Player 2 wins:
-// Horizontals:
-// 111111000000000000 - 258048
-// 000000111111000000 - 4032
-// 000000000000111111 - 63
-// Verticals:
-// 110000110000110000 - 199728
-// 001100001100001100 - 49932
-// 000011000011000011 - 12483
-// Diagonals:
-// 110000001100000011 - 197379
-// 000011001100110000 - 13104
