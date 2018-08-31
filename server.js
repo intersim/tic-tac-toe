@@ -12,13 +12,13 @@ server.on('connection', socket => {
     game.players.push(socket);
 
     if (game.players.length == 1) {
-        socket.write('You\'re "X"s!\n')
+        socket.write('Hello, player 1!\nYou\'re "X"s.\n')
         socket.write('Waiting for another player to join...\n')
     }
 
     if (game.players.length == 2) {
-        socket.write('You\'re "O"s!\n')
-        game.players[1].write('Another player has joined!\n');
+        socket.write('Hello, player 2!\nYou\'re "O"s.\n')
+        game.players[0].write('Another player has joined!\n');
         game.players.forEach(player => player.write(`Let's get started...\n${game.stringifyBoard()}`))
         game.playGame();
     }

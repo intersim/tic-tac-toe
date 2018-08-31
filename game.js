@@ -24,7 +24,7 @@ function stringifyBoard () {
 
   for (let i = 0; i < stringBoard.length; i+=2) {
     let space = stringBoard[i] + stringBoard[i+1];
-    if (space == '00') stringSquareBoard += `| _ |`
+    if (space == '00') stringSquareBoard += `| ${Math.floor(i/2) + 1} |`
     if (space == '01') stringSquareBoard += '| X |'
     if (space == '11') stringSquareBoard += '| O |'
     if ((i + 2) % 3 == 0) stringSquareBoard += '\n'
@@ -86,37 +86,40 @@ function playGame(players) {
 
         if ((i + 1) !== currentPlayerNum) return;
 
-        this.players.forEach(player => player.write(`It's player ${currentPlayerNum}'s turn!\n`));
-          this.playTurn(currentPlayerNum, data);
-
+          this.updateBoard(currentPlayerNum, data);
           const newBoard = this.stringifyBoard();
           
           this.players[currentPlayerNum - 1].write(`You played:\n` + newBoard);
           this.players[otherPlayerNum - 1].write(`Player ${currentPlayerNum} played:\n` + newBoard);
+          
           const isGameOver = this.checkBoard();
-    
           if (isGameOver) {
+            // end game
             this.players.forEach(player => player.end(isGameOver));
             this.players = [];
             this.board = 0;
           } else {
+            // set up next turn
             this.players.forEach(player => player.write(`It's player ${otherPlayerNum}'s turn!\n`));
+            this.currentPlayer = !this.currentPlayer
           }
+        });
       });
-    });
-
-  // determine whose turn it is, cycle through number of turns
-}
-
-function playTurn(playerNum, move) {
-  // check if spot is open
-  // if not, claim it!
-
-  // set new board state
-  let binaryOffset = playerNum == 2 ? 3 : 1;
-  let binaryNum = binaryOffset << ((9 - move) * 2)
-  this.board = this.board | binaryNum;
-  this.currentPlayer = !this.currentPlayer
+    }
+    
+    function updateBoard(playerNum, move) {
+      let binaryOffset = playerNum == 2 ? 3 : 1;
+      let binaryNum = binaryOffset << ((9 - move) * 2);
+      
+      // check if spot is open
+      if ((this.board & binaryNum)) {
+        // if taken...
+        this.players[playerNum - 1].write("That spot's taken, nice try...\n");
+      } else {
+        // if not, claim it!
+        // set new board state
+        this.board = this.board | binaryNum;
+      }
 }
 
 const game = {
@@ -126,7 +129,7 @@ const game = {
   stringifyBoard,
   checkBoard,
   playGame,
-  playTurn,
+  updateBoard,
   getGameOverString
 }
 
