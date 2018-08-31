@@ -34,14 +34,17 @@ function stringifyBoard () {
 
 function checkBoard () {
   const horizontals = [
-    this.board >> 12,
-    (this.board << 6) >> 12,
-    (this.board << 6) >> 12
+    this.board & parseInt('000000000000111111', 2),
+    this.board & parseInt('000000111111000000', 2),
+    this.board & parseInt('111111000000000000', 2)
   ];
 
   for (let i = 0; i < horizontals.length; i++) {
-    if (!(horizontals[i] ^ parseInt('010101',2))) return getGameOverString(1)
-    if (!(horizontals[i] ^ parseInt('111111', 2))) return getGameOverString(2);
+    let offset = 6 * i; 
+    let playerOneMask = parseInt('010101', 2) << offset;
+    let playerTwoMask = parseInt('111111', 2) << offset;
+    if (!(horizontals[i] ^ playerOneMask)) return getGameOverString(1)
+    if (!(horizontals[i] ^ playerTwoMask)) return getGameOverString(2);
   }
 
   const verticals = [
@@ -51,12 +54,15 @@ function checkBoard () {
   ];
 
   for (let i = 0; i < verticals.length; i++) {
-    if (!(verticals[i] ^ parseInt('010000010000010000', 2))) return getGameOverString(1);
-    if (!(verticals[i] ^ parseInt('000100000100000100', 2))) return getGameOverString(1);
-    if (!(verticals[i] ^ parseInt('000001000001000001', 2))) return getGameOverString(1);
-    if (!(verticals[i] ^ parseInt('110000110000110000', 2))) return getGameOverString(2);
-    if (!(verticals[i] ^ parseInt('001100001100001100', 2))) return getGameOverString(2);
-    if (!(verticals[i] ^ parseInt('000011000011000011', 2))) return getGameOverString(2);
+    for (let j = 0; j < 3; j++) {
+      let offset = parseInt('010000010000010000', 2) >> (2 * j);
+      if (!(verticals[i] ^ offset)) return getGameOverString(1);
+    }
+
+    for (let j = 0; j < 3; j++) {
+      let offset = parseInt('110000110000110000', 2) >> (2 * j);
+      if (!(verticals[i] ^ offset)) return getGameOverString(1);
+    }
   }
 
   const diagonals = [
@@ -80,6 +86,10 @@ function playGame(players) {
   this.players.forEach(player => player.write(`It's player 1's turn!\n`));
 
   this.players.forEach((player, i) => {
+    player.on('end', () => {
+      this.players.forEach(player => player.end('Other player left the game :(\n'));
+    });
+
     player.on('data', move => {
       let currentPlayerNum = this.currentPlayer ? 1 : 2;
       let otherPlayerNum = currentPlayerNum == 1 ? 2 : 1;
@@ -119,6 +129,7 @@ function updateBoard(playerNum, move) {
     // if not, claim it!
     // set new board state
     this.board = this.board | binaryMove;
+    console.log(this.board.toString(2));
   }
 }
 
