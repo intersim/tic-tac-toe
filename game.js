@@ -41,8 +41,8 @@ function checkBoard () {
   ]
 
   for (let i = 0; i < horizontals.length; i++) {
-    if (!(horizontals[i] ^ parseInt('010101',2))) return "Player one wins!"
-    if (!(horizontals[i] ^ parseInt('111111', 2))) return "Player two wins!";
+    if (!(horizontals[i] ^ parseInt('010101',2))) return getGameOverString(1)
+    if (!(horizontals[i] ^ parseInt('111111', 2))) return getGameOverString(2);
   }
 
   const verticals = [
@@ -52,12 +52,12 @@ function checkBoard () {
   ]
 
   for (let i = 0; i < verticals.length; i++) {
-    if (!(verticals[i] ^ parseInt('010000010000010000', 2))) return "Player one wins!"
-    if (!(verticals[i] ^ parseInt('000100000100000100', 2))) return "Player one wins!"
-    if (!(verticals[i] ^ parseInt('000001000001000001', 2))) return "Player one wins!"
-    if (!(verticals[i] ^ parseInt('110000110000110000', 2))) return "Player two wins!"
-    if (!(verticals[i] ^ parseInt('001100001100001100', 2))) return "Player two wins!"
-    if (!(verticals[i] ^ parseInt('000011000011000011', 2))) return "Player two wins!"
+    if (!(verticals[i] ^ parseInt('010000010000010000', 2))) return getGameOverString(1)
+    if (!(verticals[i] ^ parseInt('000100000100000100', 2))) return getGameOverString(1)
+    if (!(verticals[i] ^ parseInt('000001000001000001', 2))) return getGameOverString(1)
+    if (!(verticals[i] ^ parseInt('110000110000110000', 2))) return getGameOverString(2)
+    if (!(verticals[i] ^ parseInt('001100001100001100', 2))) return getGameOverString(2)
+    if (!(verticals[i] ^ parseInt('000011000011000011', 2))) return getGameOverString(2)
   }
 
   const diagonals = [
@@ -66,29 +66,44 @@ function checkBoard () {
   ]
 
   for (let i = 0; i < diagonals.length; i++) {
-    if (!(diagonals[i] ^ parseInt('010000000100000001', 2))) return "Player one wins!"
-    if (!(diagonals[i] ^ parseInt('000001000100010000', 2))) return "Player one wins!"
-    if (!(diagonals[i] ^ parseInt('110000001100000011', 2))) return "Player two wins!"
-    if (!(diagonals[i] ^ parseInt('000011001100110000', 2))) return "Player two wins!"
+    if (!(diagonals[i] ^ parseInt('010000000100000001', 2))) return getGameOverString(1)
+    if (!(diagonals[i] ^ parseInt('000001000100010000', 2))) return getGameOverString(1)
+    if (!(diagonals[i] ^ parseInt('110000001100000011', 2))) return getGameOverString(2)
+    if (!(diagonals[i] ^ parseInt('000011001100110000', 2))) return getGameOverString(2)
   }
 }
 
 function getGameOverString(playerNum) {
-  return `Player ${playerNum} wins!`;
+  return `Player ${playerNum} wins!\n`;
 }
 
 function playGame(players) {
-  this.players.forEach((player, i) => {
-    player.on('data', data => {
-      this.playTurn(i + 1, data);
-      const newBoard = this.stringifyBoard();
-      
-      this.players.forEach(player => player.write(`Player ${i+1}'s move:\n` + newBoard));
-      const isGameOver = this.checkBoard();
+  this.players.forEach(player => player.write(`It's player 1's turn!\n`));
+    this.players.forEach((player, i) => {
+      player.on('data', data => {
+        let currentPlayerNum = this.currentPlayer ? 1 : 2;
+        let otherPlayerNum = currentPlayerNum == 1 ? 2 : 1;
 
-      if (isGameOver) this.players.forEach(player => player.end(isGameOver));
+        if ((i + 1) !== currentPlayerNum) return;
+
+        this.players.forEach(player => player.write(`It's player ${currentPlayerNum}'s turn!\n`));
+          this.playTurn(currentPlayerNum, data);
+
+          const newBoard = this.stringifyBoard();
+          
+          this.players[currentPlayerNum - 1].write(`You played:\n` + newBoard);
+          this.players[otherPlayerNum - 1].write(`Player ${currentPlayerNum} played:\n` + newBoard);
+          const isGameOver = this.checkBoard();
+    
+          if (isGameOver) {
+            this.players.forEach(player => player.end(isGameOver));
+            this.players = [];
+            this.board = 0;
+          } else {
+            this.players.forEach(player => player.write(`It's player ${otherPlayerNum}'s turn!\n`));
+          }
+      });
     });
-  })
 
   // determine whose turn it is, cycle through number of turns
 }
@@ -101,11 +116,12 @@ function playTurn(playerNum, move) {
   let binaryOffset = playerNum == 2 ? 3 : 1;
   let binaryNum = binaryOffset << ((9 - move) * 2)
   this.board = this.board | binaryNum;
+  this.currentPlayer = !this.currentPlayer
 }
 
 const game = {
   players: [],
-  numTurns: 0,
+  currentPlayer: true,
   board: 0,
   stringifyBoard,
   checkBoard,
