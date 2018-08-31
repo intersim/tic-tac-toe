@@ -24,5 +24,5 @@ server.on('connection', socket => {
   }
 });
 
-server.listen(9876, () => console.log(`tcp server listening to ${server.address().port}`));
+server.listen(process.env.PORT || 9876, () => console.log(`tcp server listening to ${server.address().port}`));
 
