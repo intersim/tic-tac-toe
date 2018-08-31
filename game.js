@@ -54,17 +54,13 @@ function checkBoard () {
   ];
 
   for (let i = 0; i < verticals.length; i++) {
-    for (let j = 0; j < 3; j++) {
-      let offset = parseInt('010000010000010000', 2) >> (2 * j);
-      if (!(verticals[i] ^ offset)) return getGameOverString(1);
-    }
-
-    for (let j = 0; j < 3; j++) {
-      let offset = parseInt('110000110000110000', 2) >> (2 * j);
-      if (!(verticals[i] ^ offset)) return getGameOverString(1);
-    }
+    let offset = 2 * i;
+    let playerOneMask = parseInt('010000010000010000', 2) >> offset;
+    let playerTwoMask = parseInt('110000110000110000', 2) >> offset;
+    if (!(verticals[i] ^ playerOneMask)) return getGameOverString(1);
+    if (!(verticals[i] ^ playerTwoMask)) return getGameOverString(2);
   }
-
+  
   const diagonals = [
     this.board & parseInt('110000001100000011', 2),
     this.board & parseInt('000011001100110000', 2)
@@ -87,7 +83,7 @@ function playGame(players) {
 
   this.players.forEach((player, i) => {
     player.on('end', () => {
-      this.players.forEach(player => player.end('Other player left the game :(\n'));
+      this.players.forEach(player => player.end('Your opponent left the game :(\n'));
     });
 
     player.on('data', move => {
