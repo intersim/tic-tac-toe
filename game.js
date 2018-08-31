@@ -33,44 +33,58 @@ function stringifyBoard () {
 }
 
 function checkBoard () {
+  // check rows
+  let base_horizontal_mask = parseInt('000000000000111111', 2);
   const horizontals = [
-    this.board & parseInt('000000000000111111', 2),
-    this.board & parseInt('000000111111000000', 2),
-    this.board & parseInt('111111000000000000', 2)
+    this.board & base_horizontal_mask,
+    this.board & (base_horizontal_mask << 6),
+    this.board & (base_horizontal_mask << 12)
   ];
 
   for (let i = 0; i < horizontals.length; i++) {
     let offset = 6 * i; 
     let playerOneMask = parseInt('010101', 2) << offset;
-    let playerTwoMask = parseInt('111111', 2) << offset;
+    let playerTwoMask = ((playerOneMask << 1) | playerOneMask) << offset;
     if (!(horizontals[i] ^ playerOneMask)) return getGameOverString(1)
     if (!(horizontals[i] ^ playerTwoMask)) return getGameOverString(2);
   }
 
+  // check columns
+  let base_vertical_mask = parseInt('110000110000110000', 2)
   const verticals = [
-    this.board & parseInt('110000110000110000', 2),
-    this.board & parseInt('001100001100001100', 2),
-    this.board & parseInt('000011000011000011', 2)
+    this.board & base_vertical_mask,
+    this.board & (base_vertical_mask >> 2),
+    this.board & (base_vertical_mask >> 4)
   ];
 
   for (let i = 0; i < verticals.length; i++) {
     let offset = 2 * i;
     let playerOneMask = parseInt('010000010000010000', 2) >> offset;
-    let playerTwoMask = parseInt('110000110000110000', 2) >> offset;
+    let playerTwoMask = (playerOneMask << 1) | playerOneMask;
     if (!(verticals[i] ^ playerOneMask)) return getGameOverString(1);
     if (!(verticals[i] ^ playerTwoMask)) return getGameOverString(2);
   }
   
+  // check diagonals
   const diagonals = [
     this.board & parseInt('110000001100000011', 2),
     this.board & parseInt('000011001100110000', 2)
   ];
 
   for (let i = 0; i < diagonals.length; i++) {
-    if (!(diagonals[i] ^ parseInt('010000000100000001', 2))) return getGameOverString(1);
-    if (!(diagonals[i] ^ parseInt('000001000100010000', 2))) return getGameOverString(1);
-    if (!(diagonals[i] ^ parseInt('110000001100000011', 2))) return getGameOverString(2);
-    if (!(diagonals[i] ^ parseInt('000011001100110000', 2))) return getGameOverString(2);
+    {
+      let playerOneMask = parseInt('010000000100000001', 2);
+      let playerTwoMask = (playerOneMask << 1) | playerOneMask;
+      if (!(diagonals[i] ^ playerOneMask)) return getGameOverString(1);
+      if (!(diagonals[i] ^ playerTwoMask)) return getGameOverString(2);
+    }
+
+    {
+      let playerOneMask = parseInt('000001000100010000', 2);
+      let playerTwoMask = (playerOneMask << 1) | playerOneMask;
+      if (!(diagonals[i] ^ playerOneMask)) return getGameOverString(1);
+      if (!(diagonals[i] ^ playerTwoMask)) return getGameOverString(2);
+    }
   }
 }
 
@@ -119,11 +133,10 @@ function updateBoard(playerNum, move) {
   
   // check if spot is open
   if ((this.board & binaryMove)) {
-    // if taken...
+    // if taken, skip to next player
     this.players[playerNum - 1].write("That spot's taken, nice try...\n");
   } else {
-    // if not, claim it!
-    // set new board state
+    // if not, set new board state
     this.board = this.board | binaryMove;
     console.log(this.board.toString(2));
   }
