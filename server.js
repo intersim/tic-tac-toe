@@ -4,7 +4,9 @@ const game = require('./game');
 
 const server = createServer(socket => socket.setEncoding('utf8'));
 
-server.on('error', err => console.log(`ERROR: ${err}`));
+server.on('error', err => {
+  console.log(`${err}`)
+});
 
 server.on('connection', socket => {
   if (game.players.length < 2) game.players.push(socket);
@@ -22,6 +24,11 @@ server.on('connection', socket => {
     game.players.forEach(player => player.write(`Let's get started...\n${game.stringifyBoard()}`))
     game.playGame();
   }
+
+  socket.on('error', err => {
+    game.board = 0;
+    game.players = [];
+  })
 });
 
 server.listen(9876, () => console.log(`tcp server listening to ${server.address().port}`));
