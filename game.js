@@ -111,13 +111,13 @@ function playGame(players) {
       const newBoard = this.stringifyBoard();
       this.players[currentPlayerNum - 1].write(`You played:\n` + newBoard);
       this.players[otherPlayerNum - 1].write(`Player ${currentPlayerNum} played:\n` + newBoard);
-      
+
       const isGameOver = this.checkBoard();
       if (isGameOver) {
         // end game
-        this.players.forEach(player => player.end(isGameOver));
-        this.players = [];
-        this.board = 0;
+        this.endGame(isGameOver)
+      } else if (this.numMoves == 9) {
+        this.endGame(`Game over! It's a tie.\n`)
       } else {
         // set up next turn
         this.players.forEach(player => player.write(`It's player ${otherPlayerNum}'s turn!\n`));
@@ -138,19 +138,30 @@ function updateBoard(playerNum, move) {
   } else {
     // if not, set new board state
     this.board = this.board | binaryMove;
-    console.log(this.board.toString(2));
+    console.log(`Current board state: ${this.board.toString(2)}`);
   }
+
+  this.numMoves++;
+}
+
+function endGame (msg) {
+  this.players.forEach(player => player.end(msg));
+  this.players = [];
+  this.board = 0;
+  this.numMoves = 0;
 }
 
 const game = {
   players: [],
   currentPlayer: true,
   board: 0,
+  numMoves: 0,
   stringifyBoard,
   checkBoard,
   playGame,
   updateBoard,
-  getGameOverString
+  getGameOverString,
+  endGame
 }
 
 module.exports = game
